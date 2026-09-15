@@ -1,0 +1,79 @@
+{
+  "info": {
+    "_postman_id": "aac04eb8-7946-4427-8acd-cc0311a793c5",
+    "name": "PUT - Update User",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/{{userId}}",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lastName\": \"AutomationQA\",\n  \"age\": 32\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Updated values returned\", () => { pm.expect(j.lastName).to.eql(\"AutomationQA\"); pm.expect(j.age).to.eql(32); });",
+              "pm.test(\"Target id is unchanged\", () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"userId\")));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "John",
+      "type": "string"
+    },
+    {
+      "key": "uniqueEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dynamicFirstName",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "info": {
+    "_postman_id": "423263d8-dddf-4d7c-9b3c-ecc0260d5d61",
+    "name": "POST - Create User",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/add",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"{{dynamicFirstName}}\",\n  \"lastName\": \"Engineer\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"age\": 31\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const suffix = `${Date.now()}-${pm.variables.replaceIn('{{$randomInt}}')}`;",
+              "pm.collectionVariables.set(\"uniqueEmail\", `qa.api.${suffix}@example.com`);",
+              "pm.collectionVariables.set(\"dynamicFirstName\", `QA${pm.variables.replaceIn('{{$randomFirstName}}')}`);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+              "const j=pm.response.json();",
+              "pm.test(\"Generated id exists\", () => pm.expect(j.id).to.satisfy(v => Number(v) > 0));",
+              "pm.test(\"Request values are echoed correctly\", () => { pm.expect(j.firstName).to.eql(pm.collectionVariables.get(\"dynamicFirstName\")); pm.expect(j.email).to.eql(pm.collectionVariables.get(\"uniqueEmail\")); });",
+              "pm.collectionVariables.set(\"createdUserId\", String(j.id));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "John",
+      "type": "string"
+    },
+    {
+      "key": "uniqueEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dynamicFirstName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdUserId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

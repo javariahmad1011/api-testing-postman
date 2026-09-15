@@ -1,0 +1,66 @@
+{
+  "info": {
+    "_postman_id": "e5ddf811-dbf6-48e4-b77a-b3cc082a303d",
+    "name": "GET - User By ID",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get User By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/{{userId}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Requested user is returned\", () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"userId\")));",
+              "pm.test(\"Core profile fields exist\", () => { [\"firstName\",\"lastName\",\"email\",\"username\",\"role\"].forEach(k => pm.expect(j).to.have.property(k)); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "John",
+      "type": "string"
+    },
+    {
+      "key": "uniqueEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dynamicFirstName",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

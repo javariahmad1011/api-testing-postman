@@ -1,0 +1,67 @@
+{
+  "info": {
+    "_postman_id": "18e235c6-2926-4051-a542-80b141dcda6e",
+    "name": "GET - All Users",
+    "description": "Importable single-request collection validating pagination and user contract.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users?limit=10&skip=0",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Users collection contract\", () => { pm.expect(j.users).to.be.an(\"array\"); pm.expect(j.total).to.be.a(\"number\"); pm.expect(j.limit).to.be.a(\"number\"); pm.expect(j.skip).to.be.a(\"number\"); });",
+              "pm.test(\"Every returned user has core fields\", () => j.users.forEach(u => { pm.expect(u).to.have.all.keys(\"id\",\"firstName\",\"lastName\",\"maidenName\",\"age\",\"gender\",\"email\",\"phone\",\"username\",\"password\",\"birthDate\",\"image\",\"bloodGroup\",\"height\",\"weight\",\"eyeColor\",\"hair\",\"ip\",\"address\",\"macAddress\",\"university\",\"bank\",\"company\",\"ein\",\"ssn\",\"userAgent\",\"crypto\",\"role\"); }));",
+              "pm.test(\"Response time < 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "John",
+      "type": "string"
+    },
+    {
+      "key": "uniqueEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dynamicFirstName",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
