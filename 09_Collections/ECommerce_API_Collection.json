@@ -1,0 +1,234 @@
+{
+  "info": {
+    "_postman_id": "334ef7a6-c875-4415-8df2-a6b137e75585",
+    "name": "ECommerce API Collection",
+    "description": "Product listing/search plus cart CRUD. Checkout/order/payment are documented separately because the public API does not expose those enterprise workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Product Listing",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/products?limit=10&skip=0",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Product list contract\", () => { pm.expect(j.products).to.be.an(\"array\"); pm.expect(j.total).to.be.a(\"number\"); pm.expect(j.limit).to.eql(10); });",
+              "pm.test(\"Product financial fields are valid\", () => j.products.forEach(p => { pm.expect(p.id).to.exist; pm.expect(p.title).to.be.a(\"string\"); pm.expect(p.price).to.be.a(\"number\").and.at.least(0); }));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Product Search",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/products/search?q={{searchTerm}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Search collection returned\", () => { pm.expect(j.products).to.be.an(\"array\"); pm.expect(j.total).to.be.a(\"number\"); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Get Product By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/products/{{productId}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Correct product returned\", () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"productId\")));",
+              "pm.test(\"Price and stock are non-negative\", () => { pm.expect(j.price).to.be.at.least(0); pm.expect(j.stock).to.be.at.least(0); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Add To Cart",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/carts/add",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": {{cartUserId}},\n  \"products\": [\n    { \"id\": 1, \"quantity\": 2 },\n    { \"id\": 2, \"quantity\": 1 }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+              "const j=pm.response.json();",
+              "pm.test(\"Cart totals are internally meaningful\", () => { pm.expect(j.products).to.be.an(\"array\").with.length(2); pm.expect(j.totalProducts).to.eql(2); pm.expect(j.totalQuantity).to.eql(3); pm.expect(j.total).to.be.a(\"number\").and.above(0); });",
+              "pm.test(\"Cart belongs to expected user\", () => pm.expect(String(j.userId)).to.eql(pm.collectionVariables.get(\"cartUserId\")));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Update Cart",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/carts/{{cartId}}",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"merge\": true,\n  \"products\": [\n    { \"id\": 1, \"quantity\": 1 }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Cart response has calculated totals\", () => { [\"total\",\"discountedTotal\",\"totalProducts\",\"totalQuantity\"].forEach(k => pm.expect(j).to.have.property(k)); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Delete Cart",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/carts/{{cartId}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Delete cart contract\", () => { pm.expect(j.isDeleted).to.eql(true); pm.expect(j.deletedOn).to.be.a(\"string\"); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "phone",
+      "type": "string"
+    },
+    {
+      "key": "cartUserId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "cartId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

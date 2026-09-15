@@ -1,1 +1,255 @@
-
+{
+  "info": {
+    "_postman_id": "ab2d0102-83d4-4db8-a172-01e6e4e98dc3",
+    "name": "User API Collection",
+    "description": "Professional CRUD and search coverage using DummyJSON users API. Write operations are simulated by the public service; tests validate returned contracts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Get All Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users?limit=10&skip=0",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Pagination contract\", () => { pm.expect(j.users).to.be.an(\"array\"); pm.expect(j.total).to.be.a(\"number\"); pm.expect(j.skip).to.eql(0); pm.expect(j.limit).to.eql(10); });",
+              "pm.test(\"Core user contract\", () => j.users.forEach(u => { [\"id\",\"firstName\",\"lastName\",\"email\",\"username\",\"role\"].forEach(k => pm.expect(u).to.have.property(k)); }));",
+              "pm.test(\"Response < 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Get User By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/{{userId}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Correct resource returned\", () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"userId\")));",
+              "pm.test(\"Email looks valid\", () => pm.expect(j.email).to.match(/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Create User - Dynamic Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/add",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"{{dynamicFirstName}}\",\n  \"lastName\": \"Engineer\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"age\": 31\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const suffix = `${Date.now()}-${pm.variables.replaceIn('{{$randomInt}}')}`;",
+              "pm.collectionVariables.set(\"uniqueEmail\", `qa.api.${suffix}@example.com`);",
+              "pm.collectionVariables.set(\"dynamicFirstName\", `QA${pm.variables.replaceIn('{{$randomFirstName}}')}`);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+              "const j=pm.response.json();",
+              "pm.test(\"Generated id exists\", () => pm.expect(j.id).to.satisfy(v => Number(v) > 0));",
+              "pm.test(\"Request values are echoed correctly\", () => { pm.expect(j.firstName).to.eql(pm.collectionVariables.get(\"dynamicFirstName\")); pm.expect(j.email).to.eql(pm.collectionVariables.get(\"uniqueEmail\")); });",
+              "pm.collectionVariables.set(\"createdUserId\", String(j.id));",
+              "pm.test(\"Response time < 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/{{userId}}",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lastName\": \"AutomationQA\",\n  \"age\": 32\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Update returned\", () => { pm.expect(j.lastName).to.eql(\"AutomationQA\"); pm.expect(j.age).to.eql(32); });",
+              "pm.test(\"ID did not change\", () => pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"userId\")));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Search User",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/search?q={{searchTerm}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Search response contract\", () => { pm.expect(j.users).to.be.an(\"array\"); [\"total\",\"skip\",\"limit\"].forEach(k => pm.expect(j).to.have.property(k)); });",
+              "pm.test(\"No user object is missing identity\", () => j.users.forEach(u => { pm.expect(u.id).to.exist; pm.expect(u.username).to.be.a(\"string\"); }));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Delete User",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/users/{{userId}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Deletion contract\", () => { pm.expect(j.isDeleted).to.eql(true); pm.expect(j.deletedOn).to.be.a(\"string\"); pm.expect(String(j.id)).to.eql(pm.collectionVariables.get(\"userId\")); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "searchTerm",
+      "value": "John",
+      "type": "string"
+    },
+    {
+      "key": "uniqueEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dynamicFirstName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdUserId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

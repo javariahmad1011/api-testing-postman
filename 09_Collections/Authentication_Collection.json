@@ -1,0 +1,257 @@
+{
+  "info": {
+    "_postman_id": "a0664252-71e0-4478-ad94-091837a5cd5e",
+    "name": "Authentication Collection",
+    "description": "Login, token extraction, authenticated access, refresh, invalid credentials, missing token, and invalid token coverage.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Login Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"expiresInMins\": 30\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Authenticated identity returned\", () => { pm.expect(j.username).to.eql(pm.collectionVariables.get(\"username\")); pm.expect(j).to.not.have.property(\"password\"); });",
+              "pm.test(\"Tokens returned\", () => { pm.expect(j.accessToken).to.be.a(\"string\").and.not.empty; pm.expect(j.refreshToken).to.be.a(\"string\").and.not.empty; });",
+              "pm.collectionVariables.set(\"accessToken\", j.accessToken);",
+              "pm.collectionVariables.set(\"refreshToken\", j.refreshToken);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Current User With Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/me",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"Protected profile contract\", () => { pm.expect(j.username).to.eql(pm.collectionVariables.get(\"username\")); pm.expect(j.email).to.be.a(\"string\"); pm.expect(j.id).to.exist; });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/refresh",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"expiresInMins\": 30\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Refresh succeeds\", () => pm.response.to.have.status(200));",
+              "const j=pm.response.json();",
+              "pm.test(\"New tokens returned\", () => { pm.expect(j.accessToken).to.be.a(\"string\").and.not.empty; pm.expect(j.refreshToken).to.be.a(\"string\").and.not.empty; });",
+              "pm.collectionVariables.set(\"accessToken\", j.accessToken);",
+              "pm.collectionVariables.set(\"refreshToken\", j.refreshToken);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Invalid Credentials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"definitely-wrong-password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Invalid login is rejected\", () => pm.expect(pm.response.code).to.be.oneOf([400, 401]));",
+              "let j={}; try { j=pm.response.json(); } catch(e) {}",
+              "pm.test(\"No access token on failure\", () => pm.expect(j).to.not.have.property(\"accessToken\"));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Missing Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/me",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Missing token is rejected\", () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+              "let j={}; try { j=pm.response.json(); } catch(e) {}",
+              "pm.test(\"Protected user data is not returned\", () => pm.expect(j).to.not.have.property(\"username\"));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Invalid Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid.jwt.token"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/me",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Invalid token is rejected\", () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));",
+              "let text=pm.response.text();",
+              "pm.test(\"No obvious stack trace\", () => pm.expect(text.toLowerCase()).to.not.include(\"stack trace\"));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dummyjson.com",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "emilys",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "emilyspass",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
